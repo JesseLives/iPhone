@@ -1,0 +1,56 @@
+workflows:
+  flutter-ios:
+    name: Flutter iOS App
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.example.myIosApp
+      flutter: stable
+      xcode: latest
+      vars:
+        PACKAGE_NAME: "com.example.myIosApp"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+    scripts:
+      - name: Set up local properties
+        script: echo "flutter.minSdkVersion=21" > "$CM_BUILD_DIR/android/local.properties"
+
+      - name: Get Flutter packages
+        script: flutter packages pub get
+
+      - name: Install pods
+        script: |
+          cd ios
+          pod install || true
+
+      - name: Build unsigned IPA
+        script: |
+          # Build Flutter iOS release (no code signing)
+          flutter build ipa \
+            --release \
+            --no-codesign \
+            --export-method development
+
+          # The unsigned IPA will be in build/ios/ipa/
+          # If flutter build ipa doesn't work without signing, use this alternative:
+          # flutter build ios --release --no-codesign
+          # mkdir -p /tmp/Payload
+          # cp -r build/ios/iphoneos/Runner.app /tmp/Payload/
+          # cd /tmp && zip -r $CM_BUILD_DIR/MyIOSApp.ipa Payload
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/MyIOSApp.ipa
+
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true

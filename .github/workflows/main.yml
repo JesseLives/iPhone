@@ -1,4 +1,0 @@
-name: Extract ZIP Archive
-uses: csexton/extract-action@v3 with:
-    file_path: src/your-file.zip
-    extract_dir: output/directory
